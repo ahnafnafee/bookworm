@@ -14,6 +14,9 @@ export function SearchForm() {
     const [isPending, startTransition] = useTransition();
 
     useEffect(() => {
+        // Sync the input with the URL when the user navigates back/forward
+        // or submits a different query. External-state sync is what useEffect is for.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setValue(params.get("q") ?? "");
     }, [params]);
 

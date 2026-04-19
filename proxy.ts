@@ -5,7 +5,7 @@ import { SESSION_COOKIE } from "@/lib/auth/constants";
 const PROTECTED = /^\/(library|search|wishlist|settings)(\/|$)/;
 const AUTH_ROUTE = "/authenticate";
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
     const { pathname } = req.nextUrl;
     const hasSession = req.cookies.has(SESSION_COOKIE);
 

@@ -68,6 +68,10 @@ export function BookDetailDialog({ book, variant, open, onOpenChange }: Props) {
 
     useEffect(() => {
         if (!open) return;
+        // Reset state and fetch fresh details whenever the dialog re-opens
+        // with a different book. The state resets are intentional prep for
+        // the async fetch that follows.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setDetail(null);
         setLoadError(null);
         setLoading(true);

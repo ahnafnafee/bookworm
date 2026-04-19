@@ -22,6 +22,9 @@ export function ThemeToggle() {
     const { theme, setTheme } = useTheme();
     const [mounted, setMounted] = useState(false);
 
+    // next-themes: defer rendering the actual theme until after hydration
+    // so the SSR fallback ("system") matches the initial client paint.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     useEffect(() => setMounted(true), []);
 
     const current = mounted ? (theme ?? "system") : "system";

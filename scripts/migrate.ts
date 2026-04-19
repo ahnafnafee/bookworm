@@ -29,7 +29,7 @@ for (const file of files) {
     console.log(`\n→ ${file} (${statements.length} statements)`);
     for (const stmt of statements) {
         try {
-            await sql(stmt);
+            await sql.query(stmt);
             const first = stmt.split("\n")[0]?.slice(0, 72) ?? "";
             console.log(`  ✓ ${first}`);
         } catch (err: unknown) {
