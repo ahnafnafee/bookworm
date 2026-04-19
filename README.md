@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="https://nextjs.org"><img alt="Next.js 15" src="https://img.shields.io/badge/Next.js-15-black?logo=nextdotjs&logoColor=white"></a>
+  <a href="https://nextjs.org"><img alt="Next.js 16" src="https://img.shields.io/badge/Next.js-16-black?logo=nextdotjs&logoColor=white"></a>
   <a href="https://react.dev"><img alt="React 19" src="https://img.shields.io/badge/React-19-149eca?logo=react&logoColor=white"></a>
   <a href="https://www.typescriptlang.org"><img alt="TypeScript strict" src="https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white"></a>
   <a href="https://tailwindcss.com"><img alt="Tailwind CSS v4" src="https://img.shields.io/badge/Tailwind-v4-38bdf8?logo=tailwindcss&logoColor=white"></a>
@@ -26,10 +26,10 @@
 
 ## Why Bookworm?
 
-Bookworm is an open-source book-library web app built on **Next.js 15 (App Router)**, **React 19**, and **TypeScript strict**. It was rebuilt from the ground up in 2026 as a reference implementation for the modern Next.js stack, with a few things that are hard to find working together in one place:
+Bookworm is an open-source book-library web app built on **Next.js 16 (App Router)**, **React 19**, and **TypeScript strict**. It was rebuilt from the ground up in 2026 as a reference implementation for the modern Next.js stack, with a few things that are hard to find working together in one place:
 
 - **Mullvad-style account-number authentication** in a serverless Next.js app — no email, no password, no recovery flow, and the UX is a single 16-digit credential you paste to log in.
-- **Next.js 15 Server Actions + Drizzle ORM + Neon Postgres** on the Vercel Marketplace, with migration scripts and a warm-up Vercel Cron.
+- **Next.js 16 Server Actions + Drizzle ORM + Neon Postgres** on the Vercel Marketplace, with migration scripts and a warm-up Vercel Cron.
 - **Tailwind CSS v4 + shadcn/ui** with a genuine mobile-first responsive layout (bottom tabs under `md:`, sidebar above).
 - **Daily-cached third-party APIs** (Google Books, NYT Best Sellers) via `unstable_cache` and a scheduled pre-warm.
 
@@ -71,7 +71,7 @@ If you're looking for a working example of any of those, start in [`lib/auth/`](
 
 | Layer | Choice |
 | ----- | ------ |
-| Framework | [Next.js 15](https://nextjs.org) — App Router, Server Actions, Server Components |
+| Framework | [Next.js 16](https://nextjs.org) — App Router, Server Actions, Server Components |
 | Runtime | [React 19](https://react.dev) |
 | Language | [TypeScript](https://www.typescriptlang.org) with `strict: true` and `noUncheckedIndexedAccess` |
 | Styling | [Tailwind CSS v4](https://tailwindcss.com) + [shadcn/ui](https://ui.shadcn.com) (Radix primitives) |
@@ -142,7 +142,7 @@ Opaque 32-byte `session_id` in an `HttpOnly; Secure; SameSite=Lax` cookie. Sessi
 
 **Defense-in-depth:**
 
-Middleware does UX redirects only; it is not a security boundary ([CVE-2025-29927](https://nvd.nist.gov/vuln/detail/CVE-2025-29927) shows why). Every server action and every data fetch calls `requireUser()`, which re-verifies the session against the DB. See [`lib/auth/session.ts`](lib/auth/session.ts).
+The proxy (`proxy.ts` — Next.js 16 renamed the `middleware` file convention) does UX redirects only; it is not a security boundary ([CVE-2025-29927](https://nvd.nist.gov/vuln/detail/CVE-2025-29927) shows why). Every server action and every data fetch calls `requireUser()`, which re-verifies the session against the DB. See [`lib/auth/session.ts`](lib/auth/session.ts).
 
 ### Caching + rate limits
 
@@ -187,7 +187,7 @@ db/
 lib/
   auth/                  token, hash, session, rate-limit
   books/                 Google Books + NYT clients (server-only)
-middleware.ts            UX redirect gate
+proxy.ts                 UX redirect gate (Next 16's renamed middleware)
 vercel.json              cron schedule
 ```
 
