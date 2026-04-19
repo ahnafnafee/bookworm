@@ -24,6 +24,7 @@ import {
 const SIGNUP_MAX_ATTEMPTS = 5;
 const LOGIN_WINDOW_MS = 60_000;
 const LOGIN_MAX = 10;
+const ALLOWED_NEXT = /^\/(library|search|wishlist|settings)(\/|$|\?|#)/;
 
 async function clientIp(): Promise<string> {
     const h = await headers();
@@ -32,6 +33,15 @@ async function clientIp(): Promise<string> {
         h.get("x-real-ip") ||
         "unknown"
     );
+}
+
+function safeNext(raw: FormDataEntryValue | null): string {
+    if (typeof raw !== "string") return "/library";
+    // Reject protocol-relative URLs and backslash-prefixed paths that some
+    // browsers interpret as cross-origin (e.g. "//evil.com", "/\\evil.com").
+    if (raw.startsWith("//") || raw.startsWith("/\\")) return "/library";
+    if (!ALLOWED_NEXT.test(raw)) return "/library";
+    return raw;
 }
 
 const signUpSchema = z.object({
@@ -117,8 +127,7 @@ export async function logInAction(formData: FormData): Promise<LogInResult | voi
     await db.update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, user.id));
     await issueSession(user.id);
 
-    const next = String(formData.get("next") ?? "/library");
-    redirect(next.startsWith("/") ? next : "/library");
+    redirect(safeNext(formData.get("next")));
 }
 
 export async function logOutAction(): Promise<void> {
