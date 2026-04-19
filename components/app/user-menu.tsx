@@ -35,6 +35,8 @@ export function UserMenu({ user }: Props) {
     const { theme, setTheme } = useTheme();
     const [mounted, setMounted] = useState(false);
 
+    // next-themes: defer rendering the actual theme icon until after hydration.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     useEffect(() => setMounted(true), []);
 
     const label = user.displayName?.trim() || "Account";

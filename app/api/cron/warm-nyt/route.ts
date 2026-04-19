@@ -18,7 +18,10 @@ export async function GET(req: Request) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    revalidateTag("nyt");
+    // Next.js 16 requires a cache life profile as the second argument.
+    // "max" keeps the new data until the next explicit revalidation
+    // (unstable_cache's own 24h TTL still applies inside getBestSellers).
+    revalidateTag("nyt", "max");
 
     try {
         const books = await getBestSellers();
