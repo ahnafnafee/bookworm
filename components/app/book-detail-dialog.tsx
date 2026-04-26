@@ -12,6 +12,7 @@ import {
     removeFromWishlistAction,
 } from "@/app/(app)/books/actions";
 import { getBookDetailAction } from "@/app/(app)/books/details-action";
+import { LRU } from "@/lib/lru";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
@@ -22,6 +23,8 @@ import {
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { BookDetail, BookSummary } from "@/lib/books/types";
+
+const detailCache = new LRU<string, BookDetail>(50);
 
 export type DialogVariant =
     | { kind: "library" }
@@ -70,18 +73,25 @@ export function BookDetailDialog({ book, variant, open, onOpenChange }: Props) {
     useEffect(() => {
         if (!open) return;
         // Reset state and fetch fresh details whenever the dialog re-opens
-        // with a different book. The state resets are intentional prep for
-        // the async fetch that follows.
+        // with a different book.
         // eslint-disable-next-line react-hooks/set-state-in-effect
-        setDetail(null);
         setLoadError(null);
+        const cached = reloadKey === 0 ? detailCache.get(book.googleId) : undefined;
+        if (cached) {
+            setDetail(cached);
+            setLoading(false);
+            return;
+        }
+        setDetail(null);
         setLoading(true);
         let cancelled = false;
         getBookDetailAction(book.googleId)
             .then((res) => {
                 if (cancelled) return;
-                if (res.ok) setDetail(res.detail);
-                else {
+                if (res.ok) {
+                    detailCache.set(book.googleId, res.detail);
+                    setDetail(res.detail);
+                } else {
                     console.error(
                         `[book-detail] getBookDetailAction(${book.googleId}) failed:`,
                         res.error,

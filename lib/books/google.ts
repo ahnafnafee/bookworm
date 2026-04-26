@@ -2,6 +2,7 @@ import "server-only";
 
 import { unstable_cache } from "next/cache";
 
+import { LRU } from "@/lib/lru";
 import type { BookDetail, BookSummary } from "./types";
 
 type ImageLinks = {
@@ -234,10 +235,20 @@ export const searchGoogleBooks = unstable_cache(performSearch, ["google-books-se
     tags: ["google-books"],
 });
 
-export const getGoogleBookDetail = unstable_cache(performDetailFetch, ["google-books-detail-v1"], {
+const detailCached = unstable_cache(performDetailFetch, ["google-books-detail-v1"], {
     revalidate: 60 * 60 * 24,
     tags: ["google-books"],
 });
+
+const detailLru = new LRU<string, BookDetail>(500);
+
+export async function getGoogleBookDetail(googleId: string): Promise<BookDetail | null> {
+    const hit = detailLru.get(googleId);
+    if (hit) return hit;
+    const result = await detailCached(googleId);
+    if (result) detailLru.set(googleId, result);
+    return result;
+}
 
 export const resolveNytBook = unstable_cache(performNytResolve, ["google-books-nyt-v1"], {
     revalidate: 60 * 60 * 24 * 7,
