@@ -124,6 +124,56 @@ function dedupAndRank(items: BookSummary[]): BookSummary[] {
     });
 }
 
+const FETCH_TIMEOUT_MS = 8_000;
+const MAX_ATTEMPTS = 3;
+
+function isRetriableStatus(status: number): boolean {
+    return status === 408 || status === 425 || status === 429 || status >= 500;
+}
+
+async function fetchJsonWithRetry(
+    url: string,
+    label: string,
+): Promise<Response | null> {
+    let lastErr: unknown = null;
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
+        try {
+            const res = await fetch(url, {
+                headers: { accept: "application/json" },
+                signal: ctrl.signal,
+            });
+            clearTimeout(timer);
+            if (res.ok) return res;
+            if (!isRetriableStatus(res.status) || attempt === MAX_ATTEMPTS) {
+                console.error(
+                    `[google-books] ${label} failed: HTTP ${res.status} (attempt ${attempt}/${MAX_ATTEMPTS})`,
+                );
+                return res;
+            }
+            console.warn(
+                `[google-books] ${label} HTTP ${res.status}, retrying (attempt ${attempt}/${MAX_ATTEMPTS})`,
+            );
+        } catch (err) {
+            clearTimeout(timer);
+            lastErr = err;
+            const aborted = err instanceof DOMException && err.name === "AbortError";
+            console.warn(
+                `[google-books] ${label} ${aborted ? "timed out" : "errored"} (attempt ${attempt}/${MAX_ATTEMPTS}):`,
+                err,
+            );
+            if (attempt === MAX_ATTEMPTS) {
+                console.error(`[google-books] ${label} giving up after ${MAX_ATTEMPTS} attempts`);
+                throw err;
+            }
+        }
+        await new Promise((r) => setTimeout(r, 250 * attempt));
+    }
+    if (lastErr) throw lastErr;
+    return null;
+}
+
 async function fetchVolumes(
     query: string,
     limit: number,
@@ -139,10 +189,13 @@ async function fetchVolumes(
     const key = process.env.GOOGLE_BOOKS_API_KEY;
     if (key) params.set("key", key);
 
-    const res = await fetch(`https://www.googleapis.com/books/v1/volumes?${params}`, {
-        headers: { accept: "application/json" },
-    });
-    if (!res.ok) throw new Error(`Google Books API ${res.status}`);
+    const res = await fetchJsonWithRetry(
+        `https://www.googleapis.com/books/v1/volumes?${params}`,
+        `search "${query}"`,
+    );
+    if (!res || !res.ok) {
+        throw new Error(`Google Books API ${res?.status ?? "no response"}`);
+    }
     const data = (await res.json()) as GoogleBooksResponse;
     return data.items ?? [];
 }
@@ -158,11 +211,11 @@ async function performDetailFetch(googleId: string): Promise<BookDetail | null> 
     const params = new URLSearchParams();
     const key = process.env.GOOGLE_BOOKS_API_KEY;
     if (key) params.set("key", key);
-    const res = await fetch(
+    const res = await fetchJsonWithRetry(
         `https://www.googleapis.com/books/v1/volumes/${encodeURIComponent(googleId)}?${params}`,
-        { headers: { accept: "application/json" } },
+        `detail ${googleId}`,
     );
-    if (!res.ok) return null;
+    if (!res || !res.ok) return null;
     const data = (await res.json()) as GoogleBooksVolume;
     return volumeToDetail(data);
 }

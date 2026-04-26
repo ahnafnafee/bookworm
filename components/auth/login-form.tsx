@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { Loader2 } from "lucide-react";
 
 import { logInAction } from "@/app/(auth)/actions";
+import { savePasswordCredential } from "@/lib/auth/credential-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,14 +24,27 @@ export function LogInForm({ next }: { next?: string }) {
         setError(null);
         startTransition(async () => {
             const res = await logInAction(formData);
-            if (res && !res.ok) {
+            if (!res.ok) {
                 setError(res.error);
+                return;
             }
+            await savePasswordCredential(String(formData.get("token") ?? ""));
+            window.location.assign(res.next);
         });
     }
 
     return (
-        <form action={onSubmit} className="flex flex-col gap-4">
+        <form action={onSubmit} className="flex flex-col gap-4" method="post">
+            <input
+                type="text"
+                name="username"
+                value="Bookworm account"
+                readOnly
+                hidden
+                autoComplete="username"
+                aria-hidden="true"
+                tabIndex={-1}
+            />
             <div className="space-y-2">
                 <Label htmlFor="token">Account number</Label>
                 <Input
@@ -38,7 +52,7 @@ export function LogInForm({ next }: { next?: string }) {
                     name="token"
                     type="text"
                     inputMode="numeric"
-                    autoComplete="one-time-code"
+                    autoComplete="current-password"
                     placeholder="1234 5678 9012 3456"
                     value={value}
                     onChange={(e) => setValue(formatAsTyped(e.target.value))}

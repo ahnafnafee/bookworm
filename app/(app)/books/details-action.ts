@@ -22,7 +22,8 @@ export async function getBookDetailAction(googleId: string): Promise<DetailResul
         const detail = await getGoogleBookDetail(googleId);
         if (!detail) return { ok: false, error: "Book not found." };
         return { ok: true, detail };
-    } catch {
+    } catch (err) {
+        console.error(`[details-action] getGoogleBookDetail(${googleId}) threw:`, err);
         return { ok: false, error: "Could not load details." };
     }
 }

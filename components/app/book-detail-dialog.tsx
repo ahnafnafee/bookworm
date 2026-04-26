@@ -64,6 +64,7 @@ export function BookDetailDialog({ book, variant, open, onOpenChange }: Props) {
     const [detail, setDetail] = useState<BookDetail | null>(null);
     const [loading, setLoading] = useState(false);
     const [loadError, setLoadError] = useState<string | null>(null);
+    const [reloadKey, setReloadKey] = useState(0);
     const [isPending, startTransition] = useTransition();
 
     useEffect(() => {
@@ -80,7 +81,21 @@ export function BookDetailDialog({ book, variant, open, onOpenChange }: Props) {
             .then((res) => {
                 if (cancelled) return;
                 if (res.ok) setDetail(res.detail);
-                else setLoadError(res.error);
+                else {
+                    console.error(
+                        `[book-detail] getBookDetailAction(${book.googleId}) failed:`,
+                        res.error,
+                    );
+                    setLoadError(res.error);
+                }
+            })
+            .catch((err) => {
+                if (cancelled) return;
+                console.error(
+                    `[book-detail] getBookDetailAction(${book.googleId}) threw:`,
+                    err,
+                );
+                setLoadError("Could not load details.");
             })
             .finally(() => {
                 if (!cancelled) setLoading(false);
@@ -88,7 +103,7 @@ export function BookDetailDialog({ book, variant, open, onOpenChange }: Props) {
         return () => {
             cancelled = true;
         };
-    }, [open, book.googleId]);
+    }, [open, book.googleId, reloadKey]);
 
     const displayed: BookSummary = detail ?? book;
     const rating = detail?.rating ?? book.rating;
@@ -172,7 +187,18 @@ export function BookDetailDialog({ book, variant, open, onOpenChange }: Props) {
                                 <Skeleton className="h-3 w-4/5" />
                             </div>
                         ) : loadError ? (
-                            <p className="text-sm text-muted-foreground">{loadError}</p>
+                            <div className="flex flex-wrap items-center gap-2">
+                                <p className="text-sm text-muted-foreground">{loadError}</p>
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-7 px-2 text-xs"
+                                    onClick={() => setReloadKey((k) => k + 1)}
+                                >
+                                    Retry
+                                </Button>
+                            </div>
                         ) : description ? (
                             <p className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
                                 {description}

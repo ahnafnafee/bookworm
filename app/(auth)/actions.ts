@@ -98,9 +98,11 @@ export async function signUpAction(formData: FormData): Promise<SignUpResult> {
     return { ok: false, error: "Could not allocate an account number — try again." };
 }
 
-export type LogInResult = { ok: false; error: string };
+export type LogInResult =
+    | { ok: true; next: string }
+    | { ok: false; error: string };
 
-export async function logInAction(formData: FormData): Promise<LogInResult | void> {
+export async function logInAction(formData: FormData): Promise<LogInResult> {
     const ip = await clientIp();
     const rl = await checkRateLimit(`login:${ip}`, LOGIN_MAX, LOGIN_WINDOW_MS);
     if (!rl.ok) {
@@ -127,7 +129,7 @@ export async function logInAction(formData: FormData): Promise<LogInResult | voi
     await db.update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, user.id));
     await issueSession(user.id);
 
-    redirect(safeNext(formData.get("next")));
+    return { ok: true, next: safeNext(formData.get("next")) };
 }
 
 export async function logOutAction(): Promise<void> {

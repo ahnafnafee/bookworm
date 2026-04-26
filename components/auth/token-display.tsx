@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, Copy, Download, Printer } from "lucide-react";
 
+import { savePasswordCredential } from "@/lib/auth/credential-store";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -105,7 +106,10 @@ export function TokenDisplay({ token }: { token: string }) {
                 type="button"
                 size="lg"
                 disabled={!canContinue}
-                onClick={() => router.push("/library")}
+                onClick={async () => {
+                    await savePasswordCredential(token);
+                    router.push("/library");
+                }}
                 className={cn(!canContinue && "cursor-not-allowed")}
             >
                 Continue to library
