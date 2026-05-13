@@ -55,6 +55,7 @@
     },
     "resolutions": {
         "postcss": "^8.5.14",
-        "ip-address": "^10.2.0"
+        "ip-address": "^10.2.0",
+        "**/@esbuild-kit/core-utils/esbuild": "^0.25.0"
     }
 }
